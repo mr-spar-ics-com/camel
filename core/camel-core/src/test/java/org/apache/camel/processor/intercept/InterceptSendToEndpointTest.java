@@ -202,4 +202,31 @@ public class InterceptSendToEndpointTest extends ContextTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Test
+    public void testInterceptEndpointWithDynamicToD() throws Exception {
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+
+                interceptSendToEndpoint("mock*")
+                        .log("intercepted jms send!")
+                        .to("mock:bar");
+
+                from("direct:start")
+                        .setHeader("target",constant("foo"))
+                        .toD("mock:${headers.target}");
+
+            }
+        });
+        context.start();
+
+        getMockEndpoint("mock:foo").expectedBodiesReceived("Hello World");
+        getMockEndpoint("mock:bar").expectedBodiesReceived("Hello World");
+
+        template.sendBody("direct:start", "Hello World");
+
+        assertMockEndpointsSatisfied();
+    }
+
+
 }
